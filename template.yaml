@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Lambda function which deletes 'expired' CloudService Stacks
+
+Parameters:
+  Region:
+    Type: String
+    Default: ""
+
+Resources:
+  NotificationSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        -
+          Endpoint:
+            Fn::GetAtt:
+              - "heathCheckEditor"
+              - "Arn"
+          Protocol: "lambda"
+      TopicName: "Cloudwatch-Alarm-to-DNS-Failover"
+
+  MySubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint:
+        Fn::GetAtt:
+          - "heathCheckEditor"
+          - "Arn"
+      Protocol: lambda
+      TopicArn: !Ref 'NotificationSNSTopic'
+
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: /
+      Policies:
+      - PolicyDocument:
+          Statement:
+          - Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - logs:DescribeLogStreams
+            Effect: Allow
+            Resource:
+            - '*'
+          - Action:
+            - "route53:*"
+            - "route53domains:*"
+            - "cloudfront:ListDistributions"
+            - "elasticloadbalancing:DescribeLoadBalancers"
+            - "elasticbeanstalk:DescribeEnvironments"
+            - "sns:ListTopics"
+            - "sns:ListSubscriptionsByTopic"
+            - "cloudwatch:DescribeAlarms"
+            - "cloudwatch:GetMetricStatistics"
+            Effect: Allow
+            Resource:
+            - '*'
+          Version: "2012-10-17"
+        PolicyName: "AllowLogsandCloudformation"
+
+  heathCheckEditor:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: heathcheck-editor.lambda_handler
+      Runtime: python3.6
+      CodeUri: package/.
+      Description: Lambda function which disable healthcheck on primary route 53 when failover
+      MemorySize: 128
+      Timeout: 300
+      Role: !GetAtt ExecutionRole.Arn
+      Environment:
+        Variables:
+          REGION: !Ref Region
+
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref NotificationSNSTopic
+      FunctionName: !GetAtt heathCheckEditor.Arn
