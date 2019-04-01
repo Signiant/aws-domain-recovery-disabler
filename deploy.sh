@@ -4,7 +4,7 @@
 deploy_bucket=$1
 profile=$2
 region=$3
-domain_name=$4
+prefix_name=$4
 parameters=$5
 
 rm -rf package
@@ -42,7 +42,7 @@ fi
 echo "Deploying lambda..."
 aws cloudformation deploy --capabilities CAPABILITY_IAM  \
     --template-file ./packaged-template.yaml \
-    --stack-name route53-prevent-switch-primary-${domain_name}  \
+    --stack-name route53-prevent-switch-primary-${prefix_name}  \
     --parameter-overrides $parameters \
     --profile $profile  --region $region
 RETCODE=$?
