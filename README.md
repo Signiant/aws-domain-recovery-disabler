@@ -1,4 +1,4 @@
-# platform-circuit-breaker
+# aws-domain-recovery-disabler
 
 
 Here is a cloudformation stack that will prevent failover automatic recovery as listed in this aws post
