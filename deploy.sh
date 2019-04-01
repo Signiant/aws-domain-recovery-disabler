@@ -4,7 +4,8 @@
 deploy_bucket=$1
 profile=$2
 region=$3
-parameters=$4
+domain_name=$4
+parameters=$5
 
 rm -rf package
 
@@ -28,6 +29,7 @@ aws cloudformation package \
     --s3-prefix lambda-healthcheck-editor \
     --output-template-file packaged-template.yaml \
     --profile $profile --region $region
+
 RETCODE=$?
 if [ $RETCODE -ne 0 ]; then
     echo "Failed to create package"
@@ -35,9 +37,14 @@ if [ $RETCODE -ne 0 ]; then
 fi
 
 # Deploy the lambda
+# stack-name route53-prevent-switch-primary-$domain_name domain name could me independence-media-shuttle
 # --parameter-overrides Region=us-east-1 DomainName=https://example.com
 echo "Deploying lambda..."
-aws cloudformation deploy --capabilities CAPABILITY_IAM  --template-file ./packaged-template.yaml  --stack-name route53-disable-healthcheck-on-failover  --parameter-overrides $parameters --profile $profile  --region $region
+aws cloudformation deploy --capabilities CAPABILITY_IAM  \
+    --template-file ./packaged-template.yaml \
+    --stack-name route53-prevent-switch-primary-${domain_name}  \
+    --parameter-overrides $parameters \
+    --profile $profile  --region $region
 RETCODE=$?
 if [ $RETCODE -ne 0 ]; then
     echo "Failed to deploy lambda package"

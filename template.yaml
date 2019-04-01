@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
-Description: Lambda function which deletes 'expired' CloudService Stacks
+Description: Lambda function which prevent recovery to primary on failover to secondary for route53 domains
 
 Parameters:
   Region:
