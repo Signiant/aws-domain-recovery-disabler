@@ -4,7 +4,7 @@
 Here is a cloudformation stack that will prevent failover automatic recovery as listed in this aws post
 [How can I prevent failover automatic recovery?](https://forums.aws.amazon.com/thread.jspa?threadID=128432)
 
-This issue has never been resolved and this is just [our](www.signiant.com) take to the solution.
+This issue has never been resolved and this is just [our](https://www.signiant.com) take to the solution.
 
 When properly deployed this aws cloudformation stack will do the following:
 
