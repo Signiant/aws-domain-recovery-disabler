@@ -1,13 +1,51 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
-Description: Lambda function which deletes 'expired' CloudService Stacks
+Description: Lambda function which prevent recovery to primary on failover to secondary for route53 domains
 
 Parameters:
   Region:
     Type: String
     Default: ""
 
+  DomainName:
+    Type: String
+    Default: ""
+
 Resources:
+
+  myHealthCheck:
+    Type: "AWS::Route53::HealthCheck"
+    Properties:
+      HealthCheckConfig:
+        Port: "443"
+        Type: "HTTPS"
+        ResourcePath: "/healthcheck"
+        FullyQualifiedDomainName: !Ref DomainName
+        RequestInterval: "30"
+        FailureThreshold: "3"
+        EnableSNI: True
+      HealthCheckTags:
+        -
+          Key: Name
+          Value: FailoverHealthCheck
+
+  HealthCheckAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: True
+      AlarmDescription: Healthcheck alarm on route53 failover
+      AlarmActions: [!Ref 'NotificationSNSTopic']
+      MetricName: HealthCheckStatus
+      Namespace: AWS/Route53
+      Statistic: Minimum
+      Period: '60'
+      EvaluationPeriods: '3'
+      Threshold: '1'
+      ComparisonOperator: LessThanThreshold
+      Dimensions:
+      - Name: HealthCheckId
+        Value: !Ref myHealthCheck
+
   NotificationSNSTopic:
     Type: AWS::SNS::Topic
     Properties:
@@ -58,9 +96,6 @@ Resources:
           - Action:
             - "route53:*"
             - "route53domains:*"
-            - "cloudfront:ListDistributions"
-            - "elasticloadbalancing:DescribeLoadBalancers"
-            - "elasticbeanstalk:DescribeEnvironments"
             - "sns:ListTopics"
             - "sns:ListSubscriptionsByTopic"
             - "cloudwatch:DescribeAlarms"
