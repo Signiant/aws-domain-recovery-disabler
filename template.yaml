@@ -19,7 +19,7 @@ Resources:
       HealthCheckConfig:
         Port: "443"
         Type: "HTTPS"
-        ResourcePath: "/healthcheck"
+        ResourcePath: "/favicon.ico"
         FullyQualifiedDomainName: !Ref DomainName
         RequestInterval: "30"
         FailureThreshold: "3"
